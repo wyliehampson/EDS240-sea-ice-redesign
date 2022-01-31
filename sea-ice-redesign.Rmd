@@ -1,0 +1,41 @@
+---
+title: "Sea Ice Redesign"
+author: "Wylie Hampson"
+date: "1/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(janitor)
+library(here)
+library(lubridate)
+```
+
+# Sea Ice Redesign
+
+In this Assignment I will attempt to improve upon the "Arctic Death Spiral" graphic that we explored in my EDS 240 class.
+
+#### Import the data.
+
+```{r}
+sea_ice <- read.csv(here("data", "PIOMAS.vol.daily.1979.2021.Current.v2.1.csv")) %>% 
+  clean_names() %>% 
+  mutate(date = as_date((x_day - 1), origin = paste0(year, "-01-01"))) %>% # create a date for each day
+  mutate(month = month(date), year = year(date))
+```
+
+#### Start with a simple plot.
+
+```{r}
+sea_ice_by_month <- sea_ice %>% 
+  mutate(month = month(date)) %>% 
+  group_by(year, month) %>% 
+  summarize(avg_vol = mean(vol), date)
+
+ggplot(sea_ice_by_month, aes(date, avg_vol, group = month, color = factor(month))) +
+  geom_line()
+
+```
+
