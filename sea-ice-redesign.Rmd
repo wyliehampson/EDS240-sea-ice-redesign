@@ -11,6 +11,7 @@ library(tidyverse)
 library(janitor)
 library(here)
 library(lubridate)
+library(ggrepel)
 ```
 
 # Sea Ice Redesign
@@ -30,12 +31,55 @@ sea_ice <- read.csv(here("data", "PIOMAS.vol.daily.1979.2021.Current.v2.1.csv"))
 
 ```{r}
 sea_ice_by_month <- sea_ice %>% 
-  mutate(month = month(date)) %>% 
+  mutate(month = (month(date, label = TRUE, abbr = FALSE)),
+         label = month(date, label = TRUE, abbr = FALSE)) %>% 
   group_by(year, month) %>% 
-  summarize(avg_vol = mean(vol), date)
+  summarize(avg_vol = mean(vol), date, label)
 
-ggplot(sea_ice_by_month, aes(date, avg_vol, group = month, color = factor(month))) +
-  geom_line()
+by_month_plot <- ggplot(sea_ice_by_month, aes(date, avg_vol)) +
+  geom_line(aes(group = month, color = month))
+
+by_month_plot
+```
+
+#### Add a line for mean ice-vol for the years.
+
+```{r, fig.width = 6, fig.height = 3}
+sea_ice_mean <- sea_ice %>% 
+  mutate(label = ifelse(year == 2021, "Yearly Average", NA)) %>% 
+  group_by(year) %>% 
+  summarize(avg_vol = mean(vol), date, label)
+
+final_plot <- ggplot(sea_ice_by_month, aes(date, avg_vol)) +
+  geom_line(aes(group = month, color = label)) +
+  geom_line(data = sea_ice_mean, size = 1) +
+  geom_label(data = sea_ice_mean %>% filter(date == max(date)),
+             aes(label = label),
+             size = 3, 
+             nudge_x = 700) +
+  labs(x = "Year",
+       y = "Sea Ice Volume (10^3 km^3)",
+       title = "PIOMAS Arctic Sea Ice Volume") +
+  scale_color_manual(labels = c("January", "February", "March", "April", "May",
+                                "June", "July", "August", "September", "October",
+                                "November", "December"),
+                     values = c("#b63434", "#b63434", "#601ea1", "#248df0", "#0cb3a7", "#138261",
+                                "#35e077", "#2de109", "#abb337", "#d4bc16", "#9ad0a7", "#4e7256"))
+
+final_plot
 
 ```
+
+#### Save the plot
+
+```{r}
+final_plot %>% ggsave(filename = "sea_ice_plot", device = jpeg, width = 12, height = 5)
+```
+
+
+
+
+
+
+
 
