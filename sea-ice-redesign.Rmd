@@ -57,15 +57,22 @@ label_df <- sea_ice_by_month %>%
 sea_ice_mean <- sea_ice %>% 
   mutate(label = ifelse(year == 2021, "Yearly Average", NA)) %>% 
   group_by(year) %>% 
-  summarize(avg_vol = mean(vol), date, label)
+  summarize(avg_vol = mean(vol), date, label) %>% 
+  filter(str_detect(date, "06-01", negate = FALSE))
+
+months <- c("January", "February", "March", "April", "May","June", "July",
+            "August", "September", "October","November", "December")
+
+colors_scheme <- c("#b63434", "#b63434", "#601ea1", "#248df0", "#0cb3a7", "#138261",
+                    "#35e077", "#2de109", "#abb337", "#d4bc16", "#9ad0a7", "#4e7256")
+
+colors_scheme_colorblind <- c("#88CCEE", "#CC6677", "#DDCC77", "#117733", "#332288", "#AA4499", 
+                             "#44AA99", "#999933", "#882255", "#661100", "#6699CC", "#888888")
 
 final_plot <- ggplot(sea_ice_by_month, aes(date, avg_vol)) +
-  geom_line(aes(group = month, color = label)) +
-  geom_line(data = sea_ice_mean, size = 1) +
-  geom_label(data = sea_ice_mean %>% filter(date == max(date)),
-             aes(label = label),
-             size = 3,
-             nudge_x = 700) +
+  geom_line(aes(x = date, group = month, color = label)) +
+  geom_line(data = sea_ice_mean,
+            size = 2) +
   geom_text(data = sea_ice_by_month %>% 
                group_by(month) %>% 
                filter(date == max(date)),
@@ -73,15 +80,16 @@ final_plot <- ggplot(sea_ice_by_month, aes(date, avg_vol)) +
             check_overlap = FALSE,
             nudge_x = 600,
             size = 3) +
-  
+  geom_text(data = sea_ice_mean %>% filter(date == max(date)),
+            aes(label = label),
+            size = 3,
+            nudge_x = 700,
+            nudge_y = 0.4) +
   labs(x = "Year",
        y = "Sea Ice Volume (10^3 km^3)",
        title = "PIOMAS Arctic Sea Ice Volume") +
-  scale_color_manual(labels = c("January", "February", "March", "April", "May",
-                                "June", "July", "August", "September", "October",
-                                "November", "December"),
-                     values = c("#b63434", "#b63434", "#601ea1", "#248df0", "#0cb3a7", "#138261",
-                                "#35e077", "#2de109", "#abb337", "#d4bc16", "#9ad0a7", "#4e7256"),
+  scale_color_manual(labels = months,
+                     values = colors_scheme_colorblind,
                      name = "Month")
 
 final_plot
